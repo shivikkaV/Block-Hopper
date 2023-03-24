@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <style>
+        canvas {
+            border:2px solid black;
+            background-image: url("download.jpg");
+        }
+
+        #maindiv{
+            background-color: purple;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 650px;
+        }
+
+        #title{
+            color: aliceblue;
+        }
+        #subtitle{
+            color:aliceblue;
+        }
+
+        #name{
+            color:aliceblue;
+        }
+
+        #subdiv{
+            padding-top: 250px; 
+        }
+    </style>
+</head>
+    <body onload="startGame()">
+        <center>
+            <script>
+
+                var canvasWidth = 600;
+                var canvasHeight = 400;
+                
+
+                var player;
+                var playerYPosition = 200;
+
+                var fallSpeed = 0;
+                var interval = setInterval(updateCanvas, 20);
+
+                var isJumping = false;
+                var jumpSpeed = 0;
+
+                var block;
+
+                // Create a score of 0 to start with
+                var score = 0;
+                // Create a variable to hold our scoreLabel
+                var scoreLabel;
+
+                function startGame() {
+                    gameCanvas.start();
+                    player = new createPlayer(30, 30, 10);
+                    block = new createBlock();
+                    // Assign your scoreLabel variable a value from scoreLabel()
+                    scoreLabel = new createScoreLabel(10, 30);
+                }
+
+                var gameCanvas = {
+                    canvas: document.createElement("canvas"),
+                    start: function() {
+                        this.canvas.width = canvasWidth;
+                        this.canvas.height = canvasHeight;
+                        this.context = this.canvas.getContext("2d");
+                        this.canvas.style = "position: absolute; top: 50px; left: 50px; border: 2px solid blue"
+                        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+                    }
+                }
+
+                function createPlayer(width, height, x) {
+                    this.width = width;
+                    this.height = height;
+                    this.x = x;
+                    this.y = playerYPosition;
+                    
+                    this.draw = function() {
+                        ctx = gameCanvas.context;
+                        ctx.fillStyle = "teal";
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                    }
+                    this.makeFall = function() {
+                        if (!isJumping) {
+                            this.y += fallSpeed;
+                            fallSpeed += 0.1;
+                            this.stopPlayer();
+                        }
+                    }
+                    this.stopPlayer = function() {
+                        var ground = canvasHeight - this.height;
+                        if (this.y > ground) {
+                            this.y = ground;
+                        }
+                    }
+                    this.jump = function() {
+                        if (isJumping) {
+                            this.y -= jumpSpeed;
+                            jumpSpeed += 0.3;
+                        }
+                    }
+                }
+
+                function createBlock() {
+                    var width = randomNumber(10, 50);
+                    var height = randomNumber(10, 200);
+                    var speed = randomNumber(2, 6);
+                    
+                    this.x = canvasWidth;
+                    this.y = canvasHeight - height;
+                    
+                    this.draw = function() {
+                        ctx = gameCanvas.context;
+                        ctx.fillStyle = "violet";
+                        ctx.fillRect(this.x, this.y, width, height);
+                    }
+                    this.attackPlayer = function() {
+                        this.x -= speed;
+                        this.returnToAttackPosition();
+                    }
+                    this.returnToAttackPosition = function() {
+                        if (this.x < 0) {
+                            width = randomNumber(10, 50);
+                            height = randomNumber(99, 100);
+                            speed = randomNumber(4, 6);
+                            this.y = canvasHeight - height;
+                            this.x = canvasWidth;
+                            // Increase your score if your block made it to the edge
+                            score++;
+                        }
+                    }
+                }
+
+                function detectCollision() {
+                    var playerLeft = player.x
+                    var playerRight = player.x + player.width;
+                    var blockLeft = block.x;
+                    var blockRight = block.x + block.width;
+                    
+                    var playerBottom = player.y + player.height;
+                    var blockTop = block.y;
+                    
+                    if (playerRight > blockLeft && 
+                        playerLeft < blockLeft && 
+                        playerBottom > blockTop) {
+                        
+                        gameCanvas.stop();
+                    }
+                }
+
+                function createScoreLabel(x, y) {
+                    this.score = 0;  
+                    this.x = x;
+                    this.y = y;
+                    this.draw = function() {
+                        ctx = gameCanvas.context;
+                        ctx.font = "25px Marker Felt";
+                        ctx.fillStyle = "yellow";
+                        ctx.fillText(this.text, this.x, this.y);
+                    }
+                }
+
+                function updateCanvas() {
+                    detectCollision();
+                    
+                    ctx = gameCanvas.context;
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    
+                    player.makeFall();
+                    player.draw();
+                    player.jump();
+                    
+                    block.draw();
+                    block.attackPlayer();
+                    
+                    // Redraw your score and update the value
+                    scoreLabel.text = "SCORE: " + score;
+                    scoreLabel.draw();
+                }
+
+                function randomNumber(min, max) {
+                    return Math.floor(Math.random() * (max - min + 1) + min)
+                }
+
+                function resetJump() {
+                    jumpSpeed = 0;
+                    isJumping = false;
+                }
+
+                document.body.onkeyup = function(e) {
+                    if (e.keyCode == 38) {
+                        isJumping = true;
+                        setTimeout(function() { resetJump(); }, 1000);
+                    }
+                }
+
+                function reload() {
+                    location.reload()
+                }
+
+            </script>
+            <br>
+            <div id="maindiv">
+                <h1 id="title">Block Hopper </h1>
+                <h3 id="subtitle">The only game with physics involved. </h3>
+                
+
+                <!-- Modal -->
+
+                <button onclick="info()"  class="btn btn-info btn-lg" data-toggle="modal" data-target="#myModal">How to play</button>
+
+                <div class="modal fade" id="myModal" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="model-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="model-title">How to play/draw</h4>
+                            </div>
+                            <div class="modal-body">
+                                <p> <b> <i> Directions to play:</i></b><br> Move your cursor around the canvas to draw on the screen. <br> To change the color and width, type your color and width in the designated inputs, and you will have your color and width ready when you start drawing again. <br> To clear the area, click on "Clear area" to automatically wipe your screen.
+                                </p>
+                                <p id="red">NOTE: When you would like to erase, please type the color as 'White' and the width depends on weather you are erasing a very specific detail or if you are erasing a big part of your drawing.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="subdiv">
+
+                <h2>Reload the page to reset</h2>
+                <button onclick = "reload()" type = "button" class="btn btn-info btn-lg">Retry again!</button>
+                <h3>What's Your Highest Score? </h3>
+
+
+            </div>
+                        
+            
+
+        </center>
+    </body>
+</html>
